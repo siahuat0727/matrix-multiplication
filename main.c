@@ -20,6 +20,7 @@ MatrixMulFuncEle *matmul_listadd(MatrixMulFuncEle *list, MatrixMulFunc func,
     return_val_if_fail(node != NULL, 0);
     node->matmul = func;
     node->name = name;
+    node->next = list;
     memcpy(node->ctx, ctx, extra_size);
     return node;
 }
@@ -38,6 +39,8 @@ int main()
     // Add matmul methods
     MatrixMulFuncEle *matmul_list = NULL;
     matmul_list = LIST_ADD(matmul_list, naive_matmul, "Naive method", NULL);
+    matmul_list =
+        LIST_ADD(matmul_list, cache_fri_matmul, "cache friendly method", NULL);
 
     // Add another method (example)
     // matmul_list = LIST_ADD(matmul_list, strassen_matmul, "Strassen + naive method",

@@ -14,3 +14,20 @@ Matrix naive_matmul(const Matrix a, const Matrix b, void *ctx)
 
     return dst;
 }
+
+Matrix cache_fri_matmul(const Matrix a, const Matrix b, void *ctx)
+{
+    assert(("Dimension property of matrix multiplication",
+            a.col == b.row));  // Error or warning?
+
+    Matrix dst = matrix_create(a.row, b.col);
+
+    for (int i = 0; i < a.row; ++i)
+        for (int k = 0; k < a.col; ++k) {
+            int r = a.values[i][k];
+            for (int j = 0; j < b.col; ++j)
+                dst.values[i][j] += r * b.values[k][j];
+        }
+
+    return dst;
+}
