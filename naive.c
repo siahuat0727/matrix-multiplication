@@ -10,9 +10,12 @@ void naive_matmul(const Matrix a, const Matrix b, const Matrix * const dst, void
     memset(dst->values[0], 0, sizeof(*(dst->values[0])) * dst->row * dst->col);
 
     for (int i = 0; i < a.row; ++i)
-        for (int j = 0; j < b.col; ++j)
+        for (int j = 0; j < b.col; ++j) {
+            int sum = 0;
             for (int k = 0; k < a.col; ++k)
-                dst->values[i][j] += a.values[i][k] * b.values[k][j];
+                sum += a.values[i][k] * b.values[k][j];
+            dst->values[i][j] += sum;
+        }
 }
 
 void cache_fri_matmul(const Matrix a, const Matrix b, const Matrix * const dst, void *ctx)
