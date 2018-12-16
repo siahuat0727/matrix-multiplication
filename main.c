@@ -4,7 +4,8 @@
 #define LIST_ADD(list, func, name, ctx) \
     matmul_listadd(list, func, name, ctx, ctx==NULL ? 0 : sizeof(*ctx))
 
-typedef Matrix (*MatrixMulFunc)(const Matrix, const Matrix, void*);
+typedef void (*MatrixMulFunc)(const Matrix, const Matrix,
+        const Matrix * const dst, void *ctx);
 
 typedef struct _MatrixMulFuncEle {
     MatrixMulFunc matmul;
@@ -42,30 +43,27 @@ int main()
     matmul_list =
         LIST_ADD(matmul_list, cache_fri_matmul, "cache friendly method", NULL);
 
-    // Add another method (example)
-    // matmul_list = LIST_ADD(matmul_list, strassen_matmul, "Strassen + naive method",
-    //         &(StrassenInfo){.matmul=naive_matmul});
-
     // Read matrix
     Matrix m = matrix_read();
     matrix_print(m);
     Matrix n = matrix_read();
     matrix_print(n);
+    Matrix o = matrix_create(m.row, n.col);
     Matrix ans = matrix_read();
 
     for (MatrixMulFuncEle *it = matmul_list; it != NULL; it = it->next) {
         MatrixMulFunc matmul = it->matmul;
 
         // Time start
-        Matrix o = matmul(m, n, it->ctx);
+        matmul(m, n, &o, it->ctx);
         // Time end
 
         matrix_print(o);
         printf("%s %s!\n", it->name, matrix_equal(o, ans) ? "correct" : "wrong");
-        o = matrix_free(o);
     }
     matrix_free(m);
     matrix_free(n);
+    matrix_free(o);
     matrix_free(ans);
     matmul_freeall(matmul_list);
 }

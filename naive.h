@@ -3,7 +3,7 @@
 
 #include "matrix.h"
 
-Matrix naive_matmul(const Matrix, const Matrix, void *ctx);
-Matrix cache_fri_matmul(const Matrix, const Matrix, void *ctx);
+void naive_matmul(const Matrix, const Matrix, const Matrix * const dst, void *ctx);
+void cache_fri_matmul(const Matrix, const Matrix, const Matrix * const dst, void *ctx);
 
 #endif
