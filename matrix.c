@@ -16,6 +16,25 @@ Matrix matrix_create(int row, int col)
     return mat;
 }
 
+Matrix create_mat_1s(int row, int col)
+{
+    Matrix mat = matrix_create(row, col);
+
+    for (int i = 0; i < row; i++)
+        for (int j = 0; j < col; j++)
+            mat.values[i][j] = 1;
+    return mat;
+}
+
+Matrix create_val_per_col(int row, int col)
+{
+    Matrix mat = matrix_create(row, col);
+
+    for (int j = 0; j < col; j++)
+        mat.values[rand() % row][j] = rand() % 10;
+    return (mat);
+}
+
 Matrix matrix_read()
 {
     int row, col;

@@ -4,6 +4,11 @@
 #define LIST_ADD(list, func, name, ctx) \
     matmul_listadd(list, func, name, ctx, ctx==NULL ? 0 : sizeof(*ctx))
 
+#define M_ROW 16
+#define M_COL 16
+#define N_ROW 16
+#define N_COL 16
+
 typedef void (*MatrixMulFunc)(const Matrix, const Matrix,
         const Matrix * const dst, void *ctx);
 
@@ -44,12 +49,13 @@ int main()
         LIST_ADD(matmul_list, cache_fri_matmul, "cache friendly method", NULL);
 
     // Read matrix
-    Matrix m = matrix_read();
+    Matrix m = create_mat_1s(M_ROW, M_COL);
     matrix_print(m);
-    Matrix n = matrix_read();
+    Matrix n = create_val_per_col(N_ROW, N_COL);
     matrix_print(n);
-    Matrix o = matrix_create(m.row, n.col);
-    Matrix ans = matrix_read();
+    Matrix o = matrix_create(M_ROW, N_COL);
+    Matrix ans = matrix_create(M_ROW, N_COL);
+    naive_matmul(m, n, &ans, NULL);
 
     for (MatrixMulFuncEle *it = matmul_list; it != NULL; it = it->next) {
         MatrixMulFunc matmul = it->matmul;

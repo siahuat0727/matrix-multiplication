@@ -33,6 +33,8 @@ typedef struct _Matrix {
 } Matrix;
 
 Matrix matrix_create(int row, int col);
+Matrix create_mat_1s(int row, int col);
+Matrix create_val_per_col(int row, int col);
 Matrix matrix_read();
 void matrix_print(const Matrix);
 Matrix matrix_free(const Matrix);
