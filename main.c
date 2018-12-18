@@ -1,3 +1,4 @@
+#include <time.h>
 #include "matrix.h"
 #include "naive.h"
 
@@ -8,6 +9,8 @@
 #define M_COL 16
 #define N_ROW 16
 #define N_COL 16
+
+bool bIsOutput = false;
 
 typedef void (*MatrixMulFunc)(const Matrix, const Matrix,
         const Matrix * const dst, void *ctx);
@@ -47,25 +50,36 @@ int main()
     matmul_list = LIST_ADD(matmul_list, naive_matmul, "Naive method", NULL);
     matmul_list =
         LIST_ADD(matmul_list, cache_fri_matmul, "cache friendly method", NULL);
+    matmul_list = LIST_ADD(matmul_list, sub_matmul, "sub matrix", NULL);
 
     // Read matrix
     Matrix m = create_mat_1s(M_ROW, M_COL);
-    matrix_print(m);
+    if (bIsOutput)
+        matrix_print(m);
     Matrix n = create_val_per_col(N_ROW, N_COL);
-    matrix_print(n);
+    if (bIsOutput)
+        matrix_print(n);
     Matrix o = matrix_create(M_ROW, N_COL);
     Matrix ans = matrix_create(M_ROW, N_COL);
     naive_matmul(m, n, &ans, NULL);
+
+    // Clock
+    clock_t tic, toc;
 
     for (MatrixMulFuncEle *it = matmul_list; it != NULL; it = it->next) {
         MatrixMulFunc matmul = it->matmul;
 
         // Time start
+        tic = clock();
         matmul(m, n, &o, it->ctx);
+        toc = clock();
         // Time end
 
-        matrix_print(o);
-        printf("%s %s!\n", it->name, matrix_equal(o, ans) ? "correct" : "wrong");
+        printf("\n%s:\n", it->name);
+        if (bIsOutput)
+            matrix_print(o);
+        printf("%s!\n", matrix_equal(o, ans) ? "correct" : "wrong");
+        printf("CPU time:%f seconds\n", (double) (toc - tic) / CLOCKS_PER_SEC);
     }
     matrix_free(m);
     matrix_free(n);

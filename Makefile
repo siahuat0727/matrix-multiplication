@@ -10,5 +10,8 @@ naive.o: naive.c naive.h matrix.h
 matrix.o: matrix.h matrix.c
 	gcc -c matrix.c
 
+debug: main.c naive.h naive.c matrix.h matrix.c
+	gcc -g -o main -g naive.c matrix.c main.c
+
 clean:
 	@rm *.o *.gch main 2> /dev/null || true
