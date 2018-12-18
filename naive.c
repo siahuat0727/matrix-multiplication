@@ -1,20 +1,7 @@
 #include "naive.h"
 
-#define INITIALIZE(dst)                                                       \
-    do {                                                                      \
-        assert(                                                               \
-            ("Dimension property of matrix multiplication", a.col == b.row)); \
-        assert(dst != NULL);                                                  \
-        assert(dst->row == a.row);                                            \
-        assert(dst->col == b.col);                                            \
-        memset(dst->values[0], 0,                                             \
-               sizeof(*(dst->values[0])) * dst->row * dst->col);              \
-    } while (0)
-
 void naive_matmul(const Matrix a, const Matrix b, const Matrix * const dst, void *ctx)
 {
-    INITIALIZE(dst);
-
     for (int i = 0; i < a.row; ++i)
         for (int j = 0; j < b.col; ++j) {
             int sum = 0;
@@ -26,8 +13,6 @@ void naive_matmul(const Matrix a, const Matrix b, const Matrix * const dst, void
 
 void cache_fri_matmul(const Matrix a, const Matrix b, const Matrix * const dst, void *ctx)
 {
-    INITIALIZE(dst);
-
     for (int i = 0; i < a.row; ++i)
         for (int k = 0; k < a.col; ++k) {
             int r = a.values[i][k];
@@ -55,8 +40,6 @@ void sub_matmul(const Matrix a,
                 const Matrix *const dst,
                 void *ctx)
 {
-    INITIALIZE(dst);
-
     for (int i = 0; i < a.row; i += 4)
         for (int j = 0; j < b.col; j += 4)
             matmul_4(a, b, dst, i, j);

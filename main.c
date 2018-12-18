@@ -4,11 +4,11 @@
 
 #define LIST_ADD(list, func, name, ctx) \
     matmul_listadd(list, func, name, ctx, ctx==NULL ? 0 : sizeof(*ctx))
-
-#define M_ROW 16
-#define M_COL 16
-#define N_ROW 16
-#define N_COL 16
+#define SQUARE 1024
+#define M_ROW SQUARE
+#define M_COL SQUARE
+#define N_ROW SQUARE
+#define N_COL SQUARE
 
 bool bIsOutput = false;
 
@@ -62,12 +62,15 @@ int main()
     Matrix o = matrix_create(M_ROW, N_COL);
     Matrix ans = matrix_create(M_ROW, N_COL);
     naive_matmul(m, n, &ans, NULL);
+    CHECK(m, n, o);
 
     // Clock
     clock_t tic, toc;
 
     for (MatrixMulFuncEle *it = matmul_list; it != NULL; it = it->next) {
         MatrixMulFunc matmul = it->matmul;
+
+        INITIALIZE(o);
 
         // Time start
         tic = clock();

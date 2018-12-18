@@ -3,14 +3,31 @@
 
 #include "matrix.h"
 
+#define CHECK(a, b, dst)                                                      \
+    do {                                                                      \
+        assert(                                                               \
+            ("Dimension property of matrix multiplication", a.col == b.row)); \
+        assert(dst.row == a.row);                                             \
+        assert(dst.col == b.col);                                             \
+    } while (0)
+
+#define INITIALIZE(dst) \
+    memset(dst.values[0], 0, sizeof(*(dst.values[0])) * dst.row * dst.col)
+
 void matmul_4(const Matrix,
               const Matrix,
               const Matrix *const dst,
               int c_row,
               int c_col);
 
-void naive_matmul(const Matrix, const Matrix, const Matrix * const dst, void *ctx);
-void cache_fri_matmul(const Matrix, const Matrix, const Matrix * const dst, void *ctx);
+void naive_matmul(const Matrix,
+                  const Matrix,
+                  const Matrix *const dst,
+                  void *ctx);
+void cache_fri_matmul(const Matrix,
+                      const Matrix,
+                      const Matrix *const dst,
+                      void *ctx);
 void sub_matmul(const Matrix, const Matrix, const Matrix *const dst, void *ctx);
 
 #endif
