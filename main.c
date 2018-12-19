@@ -1,5 +1,6 @@
 #include "matrix.h"
 #include "naive.h"
+#include "strassen.h"
 
 #define LIST_ADD(list, func, name, ctx) \
     matmul_listadd(list, func, name, ctx, ctx==NULL ? 0 : sizeof(*ctx))
@@ -47,6 +48,12 @@ int main()
     matmul_list = LIST_ADD(matmul_list, naive_matmul, "Naive method", NULL);
     matmul_list =
         LIST_ADD(matmul_list, cache_fri_matmul, "cache friendly method", NULL);
+    matmul_list = LIST_ADD(matmul_list, strassen_matmul,
+            "Strassen + cache friendly method",
+            &((StrassenInfo){.matmul=cache_fri_matmul, .threshold=4}));
+    matmul_list = LIST_ADD(matmul_list, strassen_matmul,
+            "Strassen + naive method",
+            &((StrassenInfo){.matmul=naive_matmul, .threshold=4}));
 
     // Read matrix
     Matrix m = create_mat_1s(M_ROW, M_COL);

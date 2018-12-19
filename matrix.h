@@ -8,11 +8,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define warning_if_fail(p) \
-    if(!(p)) { \
-        printf("%s:%d Warning: "#p" failed.\n", \
-        __func__, __LINE__); \
-    }
 #define return_if_fail(p) \
     if(!(p)) { \
         printf("%s:%d Warning: "#p" failed.\n", \
@@ -33,11 +28,14 @@ typedef struct _Matrix {
 } Matrix;
 
 Matrix matrix_create(int row, int col);
+void matrix_create_all(Matrix * const mats, int num_mat, int row, int col);
+Matrix matrix_free(const Matrix);
+void matrix_free_all(Matrix * const mats, int num_mat);
+
 Matrix create_mat_1s(int row, int col);
 Matrix create_val_per_col(int row, int col);
 Matrix matrix_read();
 void matrix_print(const Matrix);
-Matrix matrix_free(const Matrix);
 bool matrix_equal(const Matrix, const Matrix);
 
 #endif

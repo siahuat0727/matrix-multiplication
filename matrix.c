@@ -5,15 +5,21 @@ Matrix matrix_create(int row, int col)
 {
     Matrix mat = {.row=row, .col=col};
 
-    mat.values = (int **)malloc(sizeof(int *) * row);
+    mat.values = malloc(sizeof(*(mat.values)) * row);
     return_val_if_fail(mat.values != NULL, (Matrix){0});
 
-    mat.values[0] = calloc(row, sizeof(int) * col);
+    mat.values[0] = calloc(row, sizeof(*(mat.values[0])) * col);
     return_val_if_fail(mat.values[0] != NULL, (Matrix){0});
 
     for (int i = 1; i < row; ++i)
         mat.values[i] = mat.values[0] + i * col;
     return mat;
+}
+
+void matrix_create_all(Matrix * const mats, int num_mat, int row, int col)
+{
+    for (int i = 0; i < num_mat; ++i)
+        mats[i] = matrix_create(row, col);
 }
 
 Matrix create_mat_1s(int row, int col)
@@ -71,7 +77,15 @@ void matrix_print(const Matrix m)
 
 Matrix matrix_free(const Matrix m)
 {
+    assert(m.values);
     free(m.values[0]);
     free(m.values);
     return (Matrix){0};
+}
+
+void matrix_free_all(Matrix * const mats, int num_mat)
+{
+    for (int i = 0; i < num_mat; ++i) {
+        mats[i] = matrix_free(mats[i]);
+    }
 }
