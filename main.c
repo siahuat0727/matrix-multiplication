@@ -4,7 +4,7 @@
 
 #define LIST_ADD(list, func, name, ctx) \
     matmul_listadd(list, func, name, ctx, ctx==NULL ? 0 : sizeof(*ctx))
-#define SQUARE 1024
+#define SQUARE 12
 #define M_ROW SQUARE
 #define M_COL SQUARE
 #define N_ROW SQUARE

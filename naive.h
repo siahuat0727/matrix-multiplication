@@ -14,11 +14,12 @@
 #define INITIALIZE(dst) \
     memset(dst.values[0], 0, sizeof(*(dst.values[0])) * dst.row * dst.col)
 
-void matmul_4(const Matrix,
-              const Matrix,
-              const Matrix *const dst,
-              int c_row,
-              int c_col);
+void matmul_stride(const Matrix,
+                   const Matrix,
+                   const Matrix *const dst,
+                   int c_row,
+                   int c_col,
+                   int stride);
 
 void naive_matmul(const Matrix,
                   const Matrix,
