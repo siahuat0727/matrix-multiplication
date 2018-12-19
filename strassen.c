@@ -1,5 +1,4 @@
 #include "strassen.h"
-#include "naive.h"
 
 #define ARRAY_LEN(array) (sizeof(array) / sizeof(array[0]))
 
@@ -40,40 +39,39 @@ static void matrix_split_4(const Matrix ori, const Matrix * const blocks)
     }
 }
 
-static void mat_arith(const Matrix a, const Matrix b,
-        const Matrix * const dst, int (*arith)(int, int))
+static void mat_arith(const Matrix l, const Matrix r,
+        const Matrix dst, int (*arith)(int, int))
 {
-    assert(a.row == b.row);
-    assert(a.col == b.col);
-    assert(dst != NULL);
-    assert(dst->row == a.row);
-    assert(dst->col == a.col);
-    assert(dst->values != NULL);
+    assert(l.row == r.row);
+    assert(l.col == r.col);
+    assert(dst.row == l.row);
+    assert(dst.col == l.col);
+    assert(dst.values != NULL);
     assert(arith != NULL);
 
-    for (int i = 0; i < dst->row; ++i)
-        for (int j = 0; j < dst->col; ++j)
-            dst->values[i][j] = arith(a.values[i][j], b.values[i][j]);
+    for (int i = 0; i < dst.row; ++i)
+        for (int j = 0; j < dst.col; ++j)
+            dst.values[i][j] = arith(l.values[i][j], r.values[i][j]);
 }
 
-static int add(int a, int b)
+static int add(int l, int r)
 {
-    return a + b;
+    return l + r;
 }
 
-static void matadd(const Matrix a, const Matrix b, const Matrix * const dst)
+static void matadd(const Matrix l, const Matrix r, const Matrix dst)
 {
-    mat_arith(a, b, dst, &add);
+    mat_arith(l, r, dst, &add);
 }
 
-static int sub(int a, int b)
+static int sub(int l, int r)
 {
-    return a - b;
+    return l - r;
 }
 
-static void matsub(const Matrix a, const Matrix b, const Matrix * const dst)
+static void matsub(const Matrix l, const Matrix r, const Matrix dst)
 {
-    mat_arith(a, b, dst, &sub);
+    mat_arith(l, r, dst, &sub);
 }
 
 static bool is_pow2(int n)
@@ -81,81 +79,80 @@ static bool is_pow2(int n)
     return !(n & (n-1));
 }
 
-void strassen_matmul(const Matrix a, const Matrix b,
-        const Matrix * const dst, void *ctx)
+void strassen_matmul(const Matrix l, const Matrix r,
+        const Matrix dst, void *ctx)
 {
     return_if_fail(("Only accept square metrices whose size is power of 2",
-                is_pow2(a.row) && a.row == a.col));
-    assert(b.row == a.row);
-    assert(b.col == a.col);
-    assert(dst != NULL);
-    assert(dst->row == a.row);
-    assert(dst->col == a.col);
-    memset(dst->values[0], 0, sizeof(*(dst->values[0])) * dst->row * dst->col);
+                is_pow2(l.row) && l.row == l.col));
+    assert(r.row == l.row);
+    assert(r.col == l.col);
+    assert(dst.row == l.row);
+    assert(dst.col == l.col);
+    memset(dst.values[0], 0, sizeof(*(dst.values[0])) * dst.row * dst.col);
 
     assert(ctx != NULL);
     StrassenInfo *info = ctx;
     MatrixMulFunc matmul = info->matmul;
     void *matmul_ctx = &(info->matmul_ctx);
-    if (a.row > info->threshold) {
+    if (l.row > info->threshold) {
         matmul = strassen_matmul;
         matmul_ctx = ctx;
     }
 
-    Matrix a_block[4] = {0},
-           b_block[4] = {0},
+    Matrix l_block[4] = {0},
+           r_block[4] = {0},
            dst_block[4] = {0},
            M[7] = {0},
            T[2] = {0};
 
-    int size_split = a.row >> 1;
-    matrix_shallow_create_all(a_block, ARRAY_LEN(a_block), size_split);
-    matrix_shallow_create_all(b_block, ARRAY_LEN(b_block), size_split);
+    int size_split = l.row >> 1;
+    matrix_shallow_create_all(l_block, ARRAY_LEN(l_block), size_split);
+    matrix_shallow_create_all(r_block, ARRAY_LEN(r_block), size_split);
     matrix_shallow_create_all(dst_block, ARRAY_LEN(dst_block), size_split);
     matrix_create_all(M, ARRAY_LEN(M), size_split, size_split);
     matrix_create_all(T, ARRAY_LEN(T), size_split, size_split);
 
-    matrix_split_4(a, a_block);
-    matrix_split_4(b, b_block);
-    matrix_split_4(*dst, dst_block);
+    matrix_split_4(l, l_block);
+    matrix_split_4(r, r_block);
+    matrix_split_4(dst, dst_block);
 
     // 7 multiplication
-    matadd(a_block[0], a_block[3], &T[0]);
-    matadd(b_block[0], b_block[3], &T[1]);
-    matmul(T[0], T[1], &M[0], matmul_ctx);
+    matadd(l_block[0], l_block[3], T[0]);
+    matadd(r_block[0], r_block[3], T[1]);
+    matmul(T[0], T[1], M[0], matmul_ctx);
 
-    matadd(a_block[2], a_block[3], &T[0]);
-    matmul(T[0], b_block[0], &M[1], matmul_ctx);
+    matadd(l_block[2], l_block[3], T[0]);
+    matmul(T[0], r_block[0], M[1], matmul_ctx);
 
-    matsub(b_block[1], b_block[3], &T[0]);
-    matmul(a_block[0], T[0], &M[2], matmul_ctx);
+    matsub(r_block[1], r_block[3], T[0]);
+    matmul(l_block[0], T[0], M[2], matmul_ctx);
 
-    matsub(b_block[2], b_block[0], &T[0]);
-    matmul(a_block[3], T[0], &M[3], matmul_ctx);
+    matsub(r_block[2], r_block[0], T[0]);
+    matmul(l_block[3], T[0], M[3], matmul_ctx);
 
-    matadd(a_block[0], a_block[1], &T[0]);
-    matmul(T[0], b_block[3], &M[4], matmul_ctx);
+    matadd(l_block[0], l_block[1], T[0]);
+    matmul(T[0], r_block[3], M[4], matmul_ctx);
 
-    matsub(a_block[2], a_block[0], &T[0]);
-    matadd(b_block[0], b_block[1], &T[1]);
-    matmul(T[0], T[1], &M[5], matmul_ctx);
+    matsub(l_block[2], l_block[0], T[0]);
+    matadd(r_block[0], r_block[1], T[1]);
+    matmul(T[0], T[1], M[5], matmul_ctx);
 
-    matsub(a_block[1], a_block[3], &T[0]);
-    matadd(b_block[2], b_block[3], &T[1]);
-    matmul(T[0], T[1], &M[6], matmul_ctx);
+    matsub(l_block[1], l_block[3], T[0]);
+    matadd(r_block[2], r_block[3], T[1]);
+    matmul(T[0], T[1], M[6], matmul_ctx);
 
     // Addition and subtraction
-    matadd(M[0], M[3], &T[0]);
-    matsub(T[0], M[4], &T[0]);
-    matadd(T[0], M[6], &dst_block[0]);
-    matadd(M[2], M[4], &dst_block[1]);
-    matadd(M[1], M[3], &dst_block[2]);
-    matsub(M[0], M[1], &T[0]);
-    matadd(T[0], M[2], &T[0]);
-    matadd(T[0], M[5], &dst_block[3]);
+    matadd(M[0], M[3], T[0]);
+    matsub(T[0], M[4], T[0]);
+    matadd(T[0], M[6], dst_block[0]);
+    matadd(M[2], M[4], dst_block[1]);
+    matadd(M[1], M[3], dst_block[2]);
+    matsub(M[0], M[1], T[0]);
+    matadd(T[0], M[2], T[0]);
+    matadd(T[0], M[5], dst_block[3]);
 
-    matrix_shallow_free_all(a_block, ARRAY_LEN(a_block));
-    matrix_shallow_free_all(b_block, ARRAY_LEN(b_block));
+    matrix_shallow_free_all(l_block, ARRAY_LEN(l_block));
+    matrix_shallow_free_all(r_block, ARRAY_LEN(r_block));
     matrix_shallow_free_all(dst_block, ARRAY_LEN(dst_block));
     matrix_free_all(M, ARRAY_LEN(M));
     matrix_free_all(T, ARRAY_LEN(T));

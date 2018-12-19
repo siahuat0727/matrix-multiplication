@@ -72,7 +72,6 @@ void matrix_print(const Matrix m)
         }
         puts("");
     }
-    puts("");
 }
 
 Matrix matrix_free(const Matrix m)
