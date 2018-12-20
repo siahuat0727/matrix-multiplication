@@ -1,4 +1,4 @@
-CFLAGS = --std gnu99 -O0 -Wall
+CFLAGS = --std gnu99 -O0 -msse4.1 -Wall
 
 VERIFY ?= 0
 EXECUTABLE := naive cache_fd submatrix \
