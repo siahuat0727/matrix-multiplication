@@ -4,8 +4,7 @@
 #include "matrix.h"
 #include "matmul.h"
 
-void strassen_matmul(const Matrix, const Matrix,
-        const Matrix, void *ctx);
+void strassen_matmul(const Matrix, const Matrix, const Matrix, void *ctx);
 
 typedef void (*MatrixMulFunc)(const Matrix,
         const Matrix, const Matrix, void *ctx);

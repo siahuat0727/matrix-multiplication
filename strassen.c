@@ -2,6 +2,16 @@
 
 #define ARRAY_LEN(array) (sizeof(array) / sizeof(array[0]))
 
+static int hibit(int n)
+{
+    n |= (n >>  1);
+    n |= (n >>  2);
+    n |= (n >>  4);
+    n |= (n >>  8);
+    n |= (n >> 16);
+    return n - (n >> 1);
+}
+
 static Matrix matrix_shallow_create(int row)
 {
     Matrix mat = {.row=row, .col=row, .values=malloc(sizeof(*(mat.values)) * row)};
@@ -27,6 +37,13 @@ static void matrix_shallow_free_all(Matrix * const mats, int num_mat)
         mats[i] = matrix_shallow_free(mats[i]);
 }
 
+static void matrix_copy(const Matrix dst, const Matrix src, int row, int col)
+{
+    for (int i = 0; i < row; ++i)
+        for (int j = 0; j < col; ++j)
+            dst.values[i][j] = src.values[i][j];
+}
+
 static void matrix_split_4(const Matrix ori, const Matrix * const blocks)
 {
     int row_half = ori.row >> 1;
@@ -42,13 +59,6 @@ static void matrix_split_4(const Matrix ori, const Matrix * const blocks)
 static void mat_arith(const Matrix l, const Matrix r,
         const Matrix dst, int (*arith)(int, int))
 {
-    assert(l.row == r.row);
-    assert(l.col == r.col);
-    assert(dst.row == l.row);
-    assert(dst.col == l.col);
-    assert(dst.values != NULL);
-    assert(arith != NULL);
-
     for (int i = 0; i < dst.row; ++i)
         for (int j = 0; j < dst.col; ++j)
             dst.values[i][j] = arith(l.values[i][j], r.values[i][j]);
@@ -79,15 +89,10 @@ static bool is_pow2(int n)
     return !(n & (n-1));
 }
 
-void strassen_matmul(const Matrix l, const Matrix r,
+void strassen_matmul_pow2(const Matrix l, const Matrix r,
         const Matrix dst, void *ctx)
 {
-    return_if_fail(("Only accept square metrices whose size is power of 2",
-                is_pow2(l.row) && l.row == l.col));
-    assert(r.row == l.row);
-    assert(r.col == l.col);
-    assert(dst.row == l.row);
-    assert(dst.col == l.col);
+    assert(dst.values != NULL);
     memset(dst.values[0], 0, sizeof(*(dst.values[0])) * dst.row * dst.col);
 
     assert(ctx != NULL);
@@ -156,4 +161,38 @@ void strassen_matmul(const Matrix l, const Matrix r,
     matrix_shallow_free_all(dst_block, ARRAY_LEN(dst_block));
     matrix_free_all(M, ARRAY_LEN(M));
     matrix_free_all(T, ARRAY_LEN(T));
+}
+
+#define max(a, b) (a > b? a : b)
+
+void strassen_matmul(const Matrix l, const Matrix r,
+        const Matrix dst, void *ctx)
+{
+    if (is_pow2(l.row) && l.row == l.col && l.row == r.row && l.row == r.col) {
+        strassen_matmul_pow2(l, r, dst, ctx);
+        return;
+    }
+
+    int max_size = max(max(l.row, l.col), max(r.row, r.col));
+    if (is_pow2(max_size) == false)
+        max_size = hibit(max_size) << 1;
+
+
+    Matrix l2 = matrix_create(max_size, max_size);
+    Matrix r2 = matrix_create(max_size, max_size);
+    Matrix dst2 = matrix_create(max_size, max_size);
+
+    matrix_copy(l2, l, l.row, l.col);
+    matrix_copy(r2, r, r.row, r.col);
+    matrix_copy(dst2, dst, dst.row, dst.col);
+
+    strassen_matmul_pow2(l2, r2, dst2, ctx);
+
+    matrix_copy(l, l2, l.row, l.col);
+    matrix_copy(r, r2, r.row, r.col);
+    matrix_copy(dst, dst2, dst.row, dst.col);
+
+    matrix_free(l2);
+    matrix_free(r2);
+    matrix_free(dst2);
 }
