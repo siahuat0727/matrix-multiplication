@@ -48,23 +48,45 @@ int main()
 {
     // Add matmul methods
     MatrixMulFuncEle *matmul_list = NULL;
+
+# if defined(naive) || defined(all) || VERIFY
+	printf("define");
+#endif
+# if defined(naive) || defined(all) || VERIFY
     matmul_list = LIST_ADD(matmul_list, naive_matmul, "Naive method", NULL);
+#endif
+
+# if defined(cache_fd) || defined(all)
     matmul_list = LIST_ADD(matmul_list, cache_fri_matmul,
             "Cache friendly method", NULL);
+#endif
+
+# if defined(submatrix) || defined(all)
     matmul_list = LIST_ADD(matmul_list, sub_matmul, "Sub matrix method",
             &((SubMatrixInfo){.stride=4}));
+#endif
+
+# if defined(strassen_cache_fd) || defined(all)
     matmul_list = LIST_ADD(matmul_list, strassen_matmul,
             "Strassen + cache friendly method",
             &((StrassenInfo){.matmul=cache_fri_matmul, .threshold=4}));
+#endif
+
+# if defined(strassen_naive) || defined(all)
     matmul_list = LIST_ADD(matmul_list, strassen_matmul,
             "Strassen + naive method",
             &((StrassenInfo){.matmul=naive_matmul, .threshold=4}));
+#endif
+
+# if defined(strassen_submatrix) || defined(all)
     matmul_list = LIST_ADD(matmul_list, strassen_matmul,
             "Strassen + sub matrix method",
             &((StrassenInfo){
                 .matmul = sub_matmul,
                 .matmul_ctx = (SubMatrixInfo){.stride=4},
                 .threshold = 4}));
+#endif
+
 
     // Read matrix
     Matrix m = create_mat_1s(M_ROW, M_COL);
