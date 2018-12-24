@@ -1,6 +1,8 @@
 #ifndef NAIVE_H_
 #define NAIVE_H_
 
+#include <emmintrin.h>
+#include <smmintrin.h>
 #include "matrix.h"
 
 #define INITIALIZE(dst) \
@@ -19,5 +21,11 @@ void matmul_stride(const Matrix l,
 void naive_matmul(const Matrix, const Matrix, const Matrix, void *ctx);
 void cache_fri_matmul(const Matrix, const Matrix, const Matrix, void *ctx);
 void sub_matmul(const Matrix, const Matrix, const Matrix, void *ctx);
+void SIMD_matmul4(const Matrix,
+                  const Matrix,
+                  const Matrix,
+                  int c_row,
+                  int c_col);
+void SIMD_matmul(const Matrix, const Matrix, const Matrix, void *ctx);
 
 #endif

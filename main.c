@@ -11,7 +11,7 @@
 #define N_ROW SQUARE
 #define N_COL SQUARE
 
-bool bIsOutput = true;
+bool bIsOutput = false;
 
 typedef void (*MatrixMulFunc)(const Matrix,
         const Matrix, const Matrix, void *ctx);
@@ -87,6 +87,9 @@ int main()
                 .threshold = 4}));
 #endif
 
+#if defined(SIMD) || defined(all)
+    matmul_list = LIST_ADD(matmul_list, SIMD_matmul, "SIMD", NULL);
+#endif
 
     // Read matrix
     Matrix m = create_mat_1s(M_ROW, M_COL);
