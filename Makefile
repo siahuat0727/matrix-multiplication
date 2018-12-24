@@ -2,7 +2,7 @@ CFLAGS = --std gnu99 -O0 -msse4.1 -Wall
 
 VERIFY ?= 0
 EXECUTABLE := naive cache_fd submatrix \
-	strassen_cache_fd strassen_naive strassen_submatrix
+	strassen_cache_fd strassen_naive strassen_submatrix SIMD
 OBJL := main.c matmul.o matrix.o matrix.h matmul.h
 ALL_OBJ: main.c matmul.o matrix.o strassen.o matrix.h matmul.h strassen.h
 
@@ -17,6 +17,10 @@ naive: $(OBJL)
 	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
 
 cache_fd: $(OBJL)
+	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
+	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+
+SIMD: $(OBJL)
 	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
 	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
 
@@ -40,7 +44,7 @@ strassen.o: strassen.c strassen.h matrix.h
 	$(CC) -c strassen.c
 
 matmul.o: matmul.c matmul.h matrix.h
-	$(CC) -c matmul.c
+	$(CC) -msse4.1 -c matmul.c
 
 matrix.o: matrix.h matrix.c
 	$(CC) -c matrix.c
