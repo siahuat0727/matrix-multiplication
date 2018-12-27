@@ -14,19 +14,19 @@ all_function: $(ALL_OBJ)
 
 naive: $(OBJL)
 	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o strassen.o
 
 cache_fd: $(OBJL)
 	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o strassen.o
 
 SIMD: $(OBJL)
 	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o strassen.o
 
 submatrix: $(OBJL)
 	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o strassen.o
 
 strassen_cache_fd: $(ALL_OBJ)
 	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
