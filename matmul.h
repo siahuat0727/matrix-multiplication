@@ -2,6 +2,7 @@
 #define NAIVE_H_
 
 #include <emmintrin.h>
+#include <immintrin.h>
 #include <smmintrin.h>
 #include "matrix.h"
 
@@ -27,5 +28,12 @@ void SIMD_matmul4(const Matrix,
                   int c_row,
                   int c_col);
 void SIMD_matmul(const Matrix, const Matrix, const Matrix, void *ctx);
+void SIMD_AVX_matmul8(const Matrix,
+                      const Matrix,
+                      const Matrix,
+                      int c_row,
+                      int c_col);
+void SIMD_AVX_matmul(const Matrix, const Matrix, const Matrix, void *ctx);
+
 
 #endif

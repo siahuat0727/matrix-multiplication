@@ -91,6 +91,10 @@ int main()
     matmul_list = LIST_ADD(matmul_list, SIMD_matmul, "SIMD", NULL);
 #endif
 
+#if defined(AVX) || defined(all)
+    matmul_list = LIST_ADD(matmul_list, SIMD_AVX_matmul, "AVX", NULL);
+#endif
+
     // Read matrix
     Matrix m = create_mat_1s(M_ROW, M_COL);
     if (bIsOutput)

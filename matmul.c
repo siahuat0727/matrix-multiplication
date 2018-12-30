@@ -110,3 +110,44 @@ void SIMD_matmul(const Matrix l, const Matrix r, const Matrix dst, void *ctx)
         for (int j = 0; j < r.col; j += 4)
             SIMD_matmul4(l, r, dst, i, j);
 }
+
+void SIMD_AVX_matmul8(const Matrix l,
+                      const Matrix r,
+                      const Matrix dst,
+                      int c_row,
+                      int c_col)
+{
+    __m256i I[8], R[8], S[8], Sum[8];
+
+    for (int i = 0; i < 8; i++)
+        Sum[i] = _mm256_setzero_si256();
+
+    for (int k = 0; k < l.col; k += 8) {
+        for (int i = 0; i < 8; i++)
+            R[i] = _mm256_load_si256((__m256i *) (&r.values[k + i][c_col]));
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                I[j] = _mm256_set1_epi32(l.values[c_row + i][k + j]);
+                S[j] = _mm256_mullo_epi32(R[j], I[j]);
+            }
+
+            for (int j = 0; j < 8; j++)
+                Sum[i] = _mm256_add_epi32(Sum[i], S[j]);
+        }
+    }
+
+    for (int i = 0; i < 8; i++)
+        _mm256_store_si256((__m256i *) (&dst.values[c_row + i][c_col]), Sum[i]);
+}
+
+void SIMD_AVX_matmul(const Matrix l,
+                     const Matrix r,
+                     const Matrix dst,
+                     void *ctx)
+{
+    CHECK(l, r, dst);
+    for (int i = 0; i < l.row; i += 8)
+        for (int j = 0; j < r.col; j += 8)
+            SIMD_AVX_matmul8(l, r, dst, i, j);
+}
