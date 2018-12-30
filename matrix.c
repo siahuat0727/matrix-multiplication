@@ -36,8 +36,10 @@ Matrix create_val_per_col(int row, int col)
 {
     Matrix mat = matrix_create(row, col);
 
-    for (int j = 0; j < col; j++)
-        mat.values[rand() % row][j] = rand() % 10;
+    for (int j = 0; j < col; j++) {
+        mat.values[rand() % row][j] = rand() % 5 + 1;
+        mat.values[rand() % row][j] = rand() % 5;
+    }
     return (mat);
 }
 
