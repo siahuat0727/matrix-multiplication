@@ -124,7 +124,8 @@ void SIMD_AVX_matmul8(const Matrix l,
 
     for (int k = 0; k < l.col; k += 8) {
         for (int i = 0; i < 8; i++)
-            R[i] = _mm256_load_si256((__m256i *) (&r.values[k + i][c_col]));
+            R[i] = _mm256_loadu_si256((__m256i *) (&r.values[k + i][c_col]));
+
 
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -138,7 +139,8 @@ void SIMD_AVX_matmul8(const Matrix l,
     }
 
     for (int i = 0; i < 8; i++)
-        _mm256_store_si256((__m256i *) (&dst.values[c_row + i][c_col]), Sum[i]);
+        _mm256_storeu_si256((__m256i *) (&dst.values[c_row + i][c_col]),
+                            Sum[i]);
 }
 
 void SIMD_AVX_matmul(const Matrix l,
