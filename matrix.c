@@ -8,7 +8,9 @@ Matrix matrix_create(int row, int col)
     mat.values = malloc(sizeof(*(mat.values)) * row);
     return_val_if_fail(mat.values != NULL, (Matrix){0});
 
-    mat.values[0] = calloc(row, sizeof(*(mat.values[0])) * col);
+    // mat.values[0] = calloc(row, sizeof(*(mat.values[0])) * col);
+    posix_memalign((void **) &mat.values[0], 32,
+                   row * sizeof(*(mat.values[0])) * col);
     return_val_if_fail(mat.values[0] != NULL, (Matrix){0});
 
     for (int i = 1; i < row; ++i)
