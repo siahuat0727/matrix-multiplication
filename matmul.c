@@ -3,7 +3,7 @@
 #define CHECK(l, r, dst)                                                      \
     do {                                                                      \
         return_if_fail(                                                       \
-            ("Dimension property of matrix multiplication", l.col == r.row)); \
+            "Dimension property of matrix multiplication" && l.col == r.row); \
         assert(dst.row == l.row);                                             \
         assert(dst.col == r.col);                                             \
     } while (0)

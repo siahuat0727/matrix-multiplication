@@ -3,63 +3,44 @@
 #include "matmul.h"
 #include "strassen.h"
 
-#define LIST_ADD(list, func, name, ctx) \
-    matmul_listadd(list, func, name, ctx, ctx==NULL ? 0 : sizeof(*ctx))
-#define SQUARE 16
-#define M_ROW SQUARE
-#define M_COL SQUARE
-#define N_ROW SQUARE
-#define N_COL SQUARE
 #define MAXN 4096
+#define PRINT_QUES(ques)                        \
+    do {                                        \
+        if (IS_SCRIPT)                          \
+            break;                              \
+        puts("------------------------------"); \
+        char **q = ques;                        \
+        int len = sizeof(ques)/sizeof(ques[0]); \
+        puts(q[0]);                             \
+        for (int i = 1; i < len; ++i)           \
+            printf("%d: %s\n", i - 1, q[i]);    \
+    } while (0)
 
-enum MatmulType {MAT_NAIVE, MAT_CACHE_FRI, MAT_SUB_MATRIX, MAT_SIMD,
-    MAT_STRASSEN};
+enum MatmulType {MATMUL_NAIVE, MATMUL_CACHE_FRI, MATMUL_SUB_MATRIX,
+    MATMUL_SIMD, MATMUL_STRASSEN};
 enum Choice {NO, YES};
-
-bool bIsOutput = false;
 
 typedef void (*MatrixMulFunc)(const Matrix,
         const Matrix, const Matrix, void *ctx);
 
-typedef struct _MatrixMulFuncEle {
-    MatrixMulFunc matmul;
-    struct _MatrixMulFuncEle *next;
-    char *name;
-    char ctx[0];
-} MatrixMulFuncEle;
-
 MatrixMulFunc matmuls[] = {naive_matmul, cache_fri_matmul, sub_matmul,
     SIMD_matmul, strassen_matmul};
 
-MatrixMulFuncEle *matmul_listadd(MatrixMulFuncEle *list, MatrixMulFunc func,
-        char *name, void *ctx, size_t extra_size)
-{
-    MatrixMulFuncEle *node = malloc(sizeof(MatrixMulFuncEle) + extra_size);
-    return_val_if_fail(node != NULL, 0);
-    node->matmul = func;
-    node->name = name;
-    node->next = list;
-    memcpy(node->ctx, ctx, extra_size);
-    return node;
-}
-
-void matmul_freeall(MatrixMulFuncEle *list)
-{
-    while (list != NULL) {
-        MatrixMulFuncEle *temp = list;
-        list = list->next;
-        free(temp);
-    }
-}
+bool IS_SCRIPT = false;
 
 int read_interval(int min, int max)
 {
-    int ret = min - 1;
-    printf("Please input value from %d to %d\n", min, max);
-    while (scanf("%d", &ret) != EOF) {
-        while(getchar() != '\n');
-        if (ret >= min && ret <= max)
-            return ret;
+    int val = min - 1;
+    while (true) {
+        if (IS_SCRIPT == false)
+            printf("Please input value from %d to %d: ", min, max);
+        int ret = scanf("%d", &val);
+        if (ret == EOF)
+            break;
+        if (ret == 0)
+            while(getchar() != '\n');  // Clear input buffer
+        if (val >= min && val <= max)
+            return val;
     }
     return -1;
 }
@@ -68,19 +49,19 @@ void get_matmul_info(enum MatmulType m, char *str, MatmulCtx *matmul_ctx)
 {
     int stride;
     switch (m) {
-        case MAT_NAIVE:
+        case MATMUL_NAIVE:
             strcat(str, "Naive method");
             break;
-        case MAT_CACHE_FRI:
+        case MATMUL_CACHE_FRI:
             strcat(str, "Cache friendly method");
             break;
-        case MAT_SUB_MATRIX:
-            puts("Stride?");
+        case MATMUL_SUB_MATRIX:
+            PRINT_QUES(((char*[]){"Stride?"}));
             stride = read_interval(4, MAXN);
             sprintf(str + strlen(str), "Sub matrix method with stride = %d", stride);
             matmul_ctx->sub_matrix_info.stride = stride;
             break;
-        case MAT_SIMD:
+        case MATMUL_SIMD:
             strcat(str, "SIMD");
             break;
         default:
@@ -89,33 +70,40 @@ void get_matmul_info(enum MatmulType m, char *str, MatmulCtx *matmul_ctx)
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    // Add matmul methods
-    MatrixMulFuncEle *matmul_list = NULL;
+    if (argc == 2 && strcmp(argv[1], "--test") == 0)
+        IS_SCRIPT = true;
+
+    PRINT_QUES(((char*[]){"Print matrix?", "No", "Yes"}));
+    bool is_output = read_interval(NO, YES);
+
+    PRINT_QUES(((char*[]){"Square matrix?", "No", "Yes"}));
+    bool is_square = read_interval(NO, YES);
 
     // Read matrix
     int m_row, m_col, n_row, n_col;
-    puts("Square matrix?");
-    puts("0: No");
-    puts("1: Yes");
-    if (read_interval(NO, YES) == YES) {
+    if (is_square) {
+        PRINT_QUES(((char*[]){"Matrix size?"}));
         m_row = m_col = n_row = n_col = read_interval(1, MAXN);
     } else {
-        puts("Enter first matrix row");
+        PRINT_QUES(((char*[]){"First matrix row?"}));
         m_row = read_interval(1, MAXN);
-        puts("Enter first matrix col");
+        PRINT_QUES(((char*[]){"First matrix column?"}));
         m_col = read_interval(1, MAXN);
-        puts("Enter second matrix row");
+        PRINT_QUES(((char*[]){"Second matrix row?"}));
         n_row = read_interval(1, MAXN);
-        puts("Enter second matrix col");
+        PRINT_QUES(((char*[]){"Second matrix column?"}));
         n_col = read_interval(1, MAXN);
     }
+    printf("Matrix multiplication: (%d x %d) x (%d x %d)\n\n",
+            m_row, m_col, n_row, n_col);
+
     Matrix m = create_mat_1s(m_row, m_col);
-    if (bIsOutput)
+    if (is_output)
         matrix_print(m);
     Matrix n = create_val_per_col(n_row, n_col);
-    if (bIsOutput)
+    if (is_output)
         matrix_print(n);
     Matrix o = matrix_create(m_row, n_col);
     Matrix ans = matrix_create(m_row, n_col);
@@ -124,52 +112,56 @@ int main()
     // Clock
     clock_t tic, toc;
     while (true) {
-        puts("Which matmul?");
-        puts("0: naive");
-        puts("1: cache friendly naive");
-        puts("2: submatrix");
-        puts("3: simd");
-        puts("4: strassen");
-        enum MatmulType mm = read_interval(MAT_NAIVE, MAT_STRASSEN);
-        char str[64] = "";
+        PRINT_QUES(((char*[]){
+                    "Choose a matrix multiplication method",
+                    "naive",
+                    "cache friendly naive",
+                    "submatrix",
+                    "simd",
+                    "strassen"}));
+        enum MatmulType mm = read_interval(MATMUL_NAIVE, MATMUL_STRASSEN);
+        if (mm == -1)
+            break;
+        char matmul_info[64] = "";
         union {
-            MatmulCtx union_info;
-            StrassenInfo strassen_info;
+            MatmulCtx union_ctx;
+            StrassenInfo strassen_ctx;
         } matmul_ctx;
-        if (mm != MAT_STRASSEN) {
-            get_matmul_info(mm, str, &(matmul_ctx.union_info));
+        if (mm != MATMUL_STRASSEN) {
+            get_matmul_info(mm, matmul_info, &(matmul_ctx.union_ctx));
         } else {
-            puts("threshold?");
+            PRINT_QUES(((char*[]){"threshold?"}));
             int threshold = read_interval(2, MAXN);
-            matmul_ctx.strassen_info.threshold = threshold;
-            sprintf(str + strlen(str), "Strassen with threshold = %d + ", threshold);
-            puts("Which matmul (when size < threshold)?");
-            puts("0: naive");
-            puts("1: cache friendly naive");
-            puts("2: submatrix");
-            puts("3: simd");
-            enum MatmulType n = read_interval(MAT_NAIVE, MAT_SIMD);
-            matmul_ctx.strassen_info.matmul = matmuls[n];
-            get_matmul_info(n, str, &(matmul_ctx.strassen_info.matmul_ctx));
+            matmul_ctx.strassen_ctx.threshold = threshold;
+            sprintf(matmul_info, "Strassen with threshold = %d + ", threshold);
+
+            PRINT_QUES(((char*[]){
+                        "Matrix multiplication method when size < threshold)",
+                        "naive",
+                        "cache friendly naive",
+                        "submatrix",
+                        "simd"}));
+            enum MatmulType nn = read_interval(MATMUL_NAIVE, MATMUL_SIMD);
+            matmul_ctx.strassen_ctx.matmul = matmuls[nn];
+            get_matmul_info(nn, matmul_info,
+                    &(matmul_ctx.strassen_ctx.matmul_ctx));
         }
-        // TODO: No need list
-        matmul_list = LIST_ADD(matmul_list, matmuls[mm], str, &matmul_ctx);
         INITIALIZE(o);
 
         tic = clock();
-        matmul_list->matmul(m, n, o, matmul_list->ctx);
+        matmuls[mm](m, n, o, &matmul_ctx);
         toc = clock();
 
-        printf("\n%s:\n", matmul_list->name);
-        if (bIsOutput)
+        if (is_output)
             matrix_print(o);
+        puts(matmul_info);
         printf("%s!\n", matrix_equal(o, ans) ? "correct" : "wrong");
-        printf("CPU time:%f seconds\n", (double) (toc - tic) / CLOCKS_PER_SEC);
+        printf("CPU time: %f seconds\n\n",
+                (double) (toc - tic) / CLOCKS_PER_SEC);
     }
 
     matrix_free(m);
     matrix_free(n);
     matrix_free(o);
     matrix_free(ans);
-    matmul_freeall(matmul_list);
 }
