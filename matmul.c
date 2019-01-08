@@ -118,28 +118,48 @@ void SIMD_AVX_matmul8(const Matrix l,
                       int c_col)
 {
     __m256i I[8], R[8], S[8], Sum[8];
+    __m256i mask;
 
     for (int i = 0; i < 8; i++)
         Sum[i] = _mm256_setzero_si256();
 
     for (int k = 0; k < l.col; k += 8) {
-        for (int i = 0; i < 8; i++)
-            R[i] = _mm256_load_si256((__m256i *) (&r.values[k + i][c_col]));
+        for (int i = 0; i < 8 && k + i < r.row; i++) {
+            if (c_col + 8 <= r.col)
+                R[i] =
+                    _mm256_loadu_si256((__m256i *) (&r.values[k + i][c_col]));
+            else {
+                int iMask[8];
+
+                for (int j = 0; j < 8; j++)
+                    iMask[j] = c_col + j < r.col ? 1 << 31 : 0;
+                mask =
+                    _mm256_setr_epi32(iMask[0], iMask[1], iMask[2], iMask[3],
+                                      iMask[4], iMask[5], iMask[6], iMask[7]);
+                R[i] = _mm256_maskload_epi32((int *) (&r.values[k + i][c_col]),
+                                             mask);
+            }
+        }
 
 
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
+        for (int i = 0; i < 8 && c_row + i < l.row; i++) {
+            for (int j = 0; j < 8 && k + j < l.col; j++) {
                 I[j] = _mm256_set1_epi32(l.values[c_row + i][k + j]);
                 S[j] = _mm256_mullo_epi32(R[j], I[j]);
             }
 
-            for (int j = 0; j < 8; j++)
+            for (int j = 0; j < 8 && k + j < l.col; j++)
                 Sum[i] = _mm256_add_epi32(Sum[i], S[j]);
         }
     }
 
-    for (int i = 0; i < 8; i++)
-        _mm256_store_si256((__m256i *) (&dst.values[c_row + i][c_col]), Sum[i]);
+    for (int i = 0; i < 8 && c_row + i < l.row; i++) {
+        if (c_col + 8 <= r.col)
+            _mm256_storeu_si256((__m256i *) (&dst.values[c_row + i][c_col]),
+                                Sum[i]);
+        else
+            _mm256_maskstore_epi32(&dst.values[c_row + i][c_col], mask, Sum[i]);
+    }
 }
 
 void SIMD_AVX_matmul(const Matrix l,
