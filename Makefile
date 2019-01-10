@@ -1,71 +1,22 @@
-CFLAGS = --std gnu99 -O0 -Wall
-
-VERIFY ?= 0
-EXECUTABLE := naive cache_fd submatrix \
-	strassen_cache_fd strassen_naive strassen_submatrix SIMD AVX
-OBJL := main.c matmul.o matrix.o matrix.h matmul.h
+CFLAGS = --std=gnu99 -O2 -DNDEBUG -msse4.1 -Wall
 CC := gcc
 
-ALL_OBJ = main.c matmul.o matrix.o strassen.o matrix.h matmul.h strassen.h
+OBJL = main.o matmul.o matrix.o strassen.o
 
-all: $(EXECUTABLE)
+all: $(OBJL)
+	$(CC) $(CFLAGS) -o main $(OBJL)
 
-all_function: $(ALL_OBJ)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -Dall -c main.c
-	$(CC) $(CFLAGS) -o main main.o matmul.o matrix.o strassen.o
+main.o: matrix.h matmul.h strassen.h
 
-naive: $(OBJL)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+strassen.o: strassen.h matrix.h
 
-cache_fd: $(OBJL)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+matmul.o: matmul.h matrix.h
+	$(CC) $(CFLAGS) -msse4.1 -mavx -march=native -c matmul.c
 
-submatrix: $(OBJL)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
+matrix.o: matrix.h
 
-strassen_cache_fd: $(ALL_OBJ)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o strassen.o
-
-strassen_naive: $(ALL_OBJ)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o strassen.o
-
-strassen_submatrix: $(ALL_OBJ)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o strassen.o
-
-SIMD: $(OBJL)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o
-
-AVX: $(OBJL)
-	$(CC) $(CFLAGS) -DVERIFY=$(VERIFY) -D$@ -c main.c
-	$(CC) $(CFLAGS) -o $@ main.o matmul.o matrix.o 
-
-strassen.o: strassen.c strassen.h matrix.h
-	$(CC) -c strassen.c
-
-matmul.o: matmul.c matmul.h matrix.h
-	$(CC) -msse4.1 -mavx -march=native -c matmul.c
-
-matrix.o: matrix.h matrix.c
-	$(CC) -c matrix.c
-
-debug: main.c matmul.h matmul.c matrix.h matrix.c
-	$(CC) -msse4.1 -mavx -march=native -Dall -g -O0 -o main strassen.c matmul.c matrix.c main.c
-
-cache-test: $(EXECUTABLE)
-	echo 3 | sudo tee /proc/sys/vm/drop_caches;
-	@for exe in $(EXECUTABLE); do\
-	    perf stat \
-		    -e cache-misses,cache-references,instructions,cycles \
-		./$$exe; \
-	done
+test:
+	./main --test < test_script/test.txt
 
 clean:
-	@rm *.o *.gch main 2> /dev/null || true
-	$(RM) $(EXECUTABLE)
+	@rm $(OBJL) main 2> /dev/null || true
