@@ -116,9 +116,6 @@ int main(int argc, char **argv)
     FILE *fp = fopen("runtime.txt", "w");
     return_val_if_fail(fp != NULL, -1);
 
-	int pid= getpid();
-    // Clock
-    clock_t tic, toc;
     while (true) {
         PRINT_QUES(((char*[]){
                     "Choose a matrix multiplication method",
@@ -156,34 +153,37 @@ int main(int argc, char **argv)
         }
         INITIALIZE(o);
 
-#	if defined(PERF)
-		int cpid = fork();
-		if( cpid == 0){
-				// child process .  Run perf stat
-				char buf[50];
-				sprintf(buf, "perf stat -p %d", pid);
-				execl("/bin/sh", "sh", "-c", buf, NULL);
-		}
-		else{
-			setpgid(cpid, 0);
-#	endif
-			tic = clock();
-			matmuls[mm](m, n, o, &matmul_ctx);
-			toc = clock();
-#	if defined(PERF)
-			kill(-cpid, SIGINT);
-		}
-#	endif
+        // Clock
+        clock_t tic = 0, toc = 0;
+#if defined(PERF)
+        int pid= getpid();
+        int cpid = fork();
+        if( cpid == 0){
+            // child process .  Run perf stat
+            char buf[50];
+            sprintf(buf, "perf stat -p %d", pid);
+            execl("/bin/sh", "sh", "-c", buf, NULL);
+        }
+        else{
+            setpgid(cpid, 0);
+#endif
+            tic = clock();
+            matmuls[mm](m, n, o, &matmul_ctx);
+            toc = clock();
+#if defined(PERF)
+            kill(-cpid, SIGINT);
+        }
+#endif
 
-		if (is_output)
-				matrix_print(o);
-		puts(matmul_info);
-		printf("%s!\n", matrix_equal(o, ans) ? "correct" : "wrong");
-		printf("CPU time: %f seconds\n\n",
-						(double) (toc - tic) / CLOCKS_PER_SEC);
-		fprintf(fp, "%s %.3f\n", matmul_info, (double) (toc - tic) / CLOCKS_PER_SEC);
+        if (is_output)
+            matrix_print(o);
+        puts(matmul_info);
+        printf("%s!\n", matrix_equal(o, ans) ? "correct" : "wrong");
+        printf("CPU time: %f seconds\n\n",
+                (double) (toc - tic) / CLOCKS_PER_SEC);
+        fprintf(fp, "%s %.3f\n", matmul_info, (double) (toc - tic) / CLOCKS_PER_SEC);
 
-	}
+    }
 
 	matrix_free(m);
 	matrix_free(n);
