@@ -50,15 +50,15 @@ void get_matmul_info(enum MatmulType m, char *str, MatmulCtx *matmul_ctx)
     int stride;
     switch (m) {
         case MATMUL_NAIVE:
-            strcat(str, "Naive method");
+            strcat(str, "Naive");
             break;
         case MATMUL_CACHE_FRI:
-            strcat(str, "Cache friendly method");
+            strcat(str, "Cache_friendly_naive");
             break;
         case MATMUL_SUB_MATRIX:
             PRINT_QUES(((char*[]){"Stride?"}));
-            stride = read_interval(4, MAXN);
-            sprintf(str + strlen(str), "Sub matrix method with stride = %d", stride);
+            stride = read_interval(2, MAXN);
+            sprintf(str + strlen(str), "Submatrix(stride=%d)", stride);
             matmul_ctx->sub_matrix_info.stride = stride;
             break;
         case MATMUL_SIMD:
@@ -109,6 +109,9 @@ int main(int argc, char **argv)
     Matrix ans = matrix_create(m_row, n_col);
     naive_matmul(m, n, ans, NULL);
 
+    FILE *fp = fopen("runtime.txt", "w");
+    return_val_if_fail(fp != NULL, -1);
+
     // Clock
     clock_t tic, toc;
     while (true) {
@@ -133,7 +136,7 @@ int main(int argc, char **argv)
             PRINT_QUES(((char*[]){"threshold?"}));
             int threshold = read_interval(2, MAXN);
             matmul_ctx.strassen_ctx.threshold = threshold;
-            sprintf(matmul_info, "Strassen with threshold = %d + ", threshold);
+            sprintf(matmul_info, "Strassen(threshold=%d)+", threshold);
 
             PRINT_QUES(((char*[]){
                         "Matrix multiplication method when size < threshold)",
@@ -158,6 +161,8 @@ int main(int argc, char **argv)
         printf("%s!\n", matrix_equal(o, ans) ? "correct" : "wrong");
         printf("CPU time: %f seconds\n\n",
                 (double) (toc - tic) / CLOCKS_PER_SEC);
+        fprintf(fp, "%s %f\n", matmul_info, (double) (toc - tic) / CLOCKS_PER_SEC);
+
     }
 
     matrix_free(m);
