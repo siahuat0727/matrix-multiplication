@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/wait.h>
 #include "matrix.h"
 #include "matmul.h"
 #include "strassen.h"
@@ -19,12 +20,12 @@
             printf("%d: %s\n", i - 1, q[i]);    \
     } while (0)
 
-enum MatmulType {MATMUL_NAIVE, MATMUL_CACHE_FRI, MATMUL_SUB_MATRIX,
-    MATMUL_SIMD, MATMUL_STRASSEN};
+enum MatmulType {MATMUL_NAIVE=1, MATMUL_CACHE_FRI, MATMUL_SUB_MATRIX,
+    MATMUL_SIMD, MATMUL_SIMD_AVX, MATMUL_STRASSEN};
 enum Choice {NO, YES};
 
-MatrixMulFunc matmuls[] = {naive_matmul, cache_fri_matmul, sub_matmul,
-    SIMD_matmul, strassen_matmul};
+MatrixMulFunc matmuls[] = {NULL, naive_matmul, cache_fri_matmul, sub_matmul,
+    SIMD_matmul, SIMD_AVX_matmul, strassen_matmul};
 
 bool IS_SCRIPT = false;
 
@@ -42,7 +43,7 @@ int read_interval(int min, int max)
         if (val >= min && val <= max)
             return val;
     }
-    return -1;
+    return 0;
 }
 
 void get_matmul_info(enum MatmulType m, char *str, MatmulCtx *matmul_ctx)
@@ -64,6 +65,9 @@ void get_matmul_info(enum MatmulType m, char *str, MatmulCtx *matmul_ctx)
         case MATMUL_SIMD:
             strcat(str, "SIMD");
             break;
+        case MATMUL_SIMD_AVX:
+            strcat(str, "SIMD_AVX");
+            break;
         default:
             printf("Switch case not match: %d\n", m);
             break;
@@ -80,10 +84,6 @@ int main(int argc, char **argv)
 
     PRINT_QUES(((char*[]){"Square matrix?", "No", "Yes"}));
     bool is_square = read_interval(NO, YES);
-
-#if defined(AVX) || defined(all)
-    matmul_list = LIST_ADD(matmul_list, SIMD_AVX_matmul, "AVX", NULL);
-#endif
 
     // Read matrix
     int m_row, m_col, n_row, n_col;
@@ -119,13 +119,15 @@ int main(int argc, char **argv)
     while (true) {
         PRINT_QUES(((char*[]){
                     "Choose a matrix multiplication method",
+                    "quit",
                     "naive",
                     "cache friendly naive",
                     "submatrix",
                     "simd",
+                    "simd_avx",
                     "strassen"}));
-        enum MatmulType mm = read_interval(MATMUL_NAIVE, MATMUL_STRASSEN);
-        if (mm == -1)
+        enum MatmulType mm = read_interval(0, MATMUL_STRASSEN);
+        if (mm == 0)
             break;
         char matmul_info[64] = "";
         union {
@@ -145,44 +147,42 @@ int main(int argc, char **argv)
                         "naive",
                         "cache friendly naive",
                         "submatrix",
-                        "simd"}));
-            enum MatmulType nn = read_interval(MATMUL_NAIVE, MATMUL_SIMD);
+                        "simd",
+                        "simd_avx"}));
+            enum MatmulType nn = read_interval(MATMUL_NAIVE, MATMUL_SIMD_AVX);
             matmul_ctx.strassen_ctx.matmul = matmuls[nn];
             get_matmul_info(nn, matmul_info,
                     &(matmul_ctx.strassen_ctx.matmul_ctx));
         }
         INITIALIZE(o);
 
-        // Clock
-        clock_t tic = 0, toc = 0;
 #if defined(PERF)
-        int pid= getpid();
+        int pid = getpid();
         int cpid = fork();
-        if( cpid == 0){
+        if (cpid == 0) {
             // child process .  Run perf stat
             char buf[50];
             sprintf(buf, "perf stat -p %d", pid);
             execl("/bin/sh", "sh", "-c", buf, NULL);
         }
-        else{
-            setpgid(cpid, 0);
+        setpgid(cpid, 0);
 #endif
-            tic = clock();
-            matmuls[mm](m, n, o, &matmul_ctx);
-            toc = clock();
+        clock_t tic = clock();
+        matmuls[mm](m, n, o, &matmul_ctx);
+        clock_t toc = clock();
+        double time_used = (double)(toc - tic) / CLOCKS_PER_SEC;
 #if defined(PERF)
-            kill(-cpid, SIGINT);
-        }
+        kill(-cpid, SIGINT);
+        wait(&(int){0});
 #endif
 
         if (is_output)
             matrix_print(o);
         puts(matmul_info);
         printf("%s!\n", matrix_equal(o, ans) ? "correct" : "wrong");
-        printf("CPU time: %f seconds\n\n",
-                (double) (toc - tic) / CLOCKS_PER_SEC);
-        fprintf(fp, "%s %.3f\n", matmul_info, (double) (toc - tic) / CLOCKS_PER_SEC);
-
+        printf("CPU time: %f seconds\n\n", time_used);
+        fprintf(fp, "%s %.3f\n", matmul_info, time_used);
+        puts("-----------------------------------------------");
     }
 
 	matrix_free(m);

@@ -59,7 +59,7 @@ void sub_matmul(const Matrix l, const Matrix r, const Matrix dst, void *ctx)
             matmul_stride(l, r, dst, i, j, stride);
 }
 
-void SIMD_matmul4(const Matrix l,
+static void SIMD_matmul4(const Matrix l,
                   const Matrix r,
                   const Matrix dst,
                   int c_row,
@@ -111,7 +111,7 @@ void SIMD_matmul(const Matrix l, const Matrix r, const Matrix dst, void *ctx)
             SIMD_matmul4(l, r, dst, i, j);
 }
 
-void SIMD_AVX_matmul8(const Matrix l,
+static void SIMD_AVX_matmul8(const Matrix l,
                       const Matrix r,
                       const Matrix dst,
                       int c_row,

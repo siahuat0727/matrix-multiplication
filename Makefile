@@ -11,7 +11,7 @@ main.o: matrix.h matmul.h strassen.h
 strassen.o: strassen.h matrix.h
 
 matmul.o: matmul.h matrix.h
-	$(CC) $(CFLAGS) -msse4.1 -mavx -march=native -c matmul.c
+	$(CC) $(CFLAGS) -mavx -march=native -c matmul.c
 
 matrix.o: matrix.h
 
