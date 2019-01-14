@@ -54,7 +54,7 @@ void get_matmul_info(enum MatmulType m, char *str, MatmulCtx *matmul_ctx)
             strcat(str, "Naive");
             break;
         case MATMUL_CACHE_FRI:
-            strcat(str, "Cache_friendly_naive");
+            strcat(str, "Cache-friendly-naive");
             break;
         case MATMUL_SUB_MATRIX:
             PRINT_QUES(((char*[]){"Stride?"}));
@@ -66,7 +66,7 @@ void get_matmul_info(enum MatmulType m, char *str, MatmulCtx *matmul_ctx)
             strcat(str, "SIMD");
             break;
         case MATMUL_SIMD_AVX:
-            strcat(str, "SIMD_AVX");
+            strcat(str, "SIMD-AVX");
             break;
         default:
             printf("Switch case not match: %d\n", m);
@@ -161,8 +161,9 @@ int main(int argc, char **argv)
         int cpid = fork();
         if (cpid == 0) {
             // child process .  Run perf stat
-            char buf[50];
-            sprintf(buf, "perf stat -p %d", pid);
+            char buf[128];
+            sprintf(buf, "perf stat -e cache-misses,cache-references,"
+                    "instructions,cycles,branches,branch-misses -p %d", pid);
             execl("/bin/sh", "sh", "-c", buf, NULL);
         }
         setpgid(cpid, 0);
@@ -182,11 +183,11 @@ int main(int argc, char **argv)
         printf("%s!\n", matrix_equal(o, ans) ? "correct" : "wrong");
         printf("CPU time: %f seconds\n\n", time_used);
         fprintf(fp, "%s %.3f\n", matmul_info, time_used);
-        puts("-----------------------------------------------");
+        puts("###############################################");
     }
 
-	matrix_free(m);
-	matrix_free(n);
-	matrix_free(o);
-	matrix_free(ans);
+    matrix_free(m);
+    matrix_free(n);
+    matrix_free(o);
+    matrix_free(ans);
 }

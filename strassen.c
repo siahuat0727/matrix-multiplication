@@ -99,7 +99,7 @@ void strassen_matmul_pow2(const Matrix l, const Matrix r,
     StrassenInfo *info = ctx;
     MatrixMulFunc matmul = info->matmul;
     void *matmul_ctx = &(info->matmul_ctx);
-    if (l.row > info->threshold) {
+    if (l.row/2 > info->threshold) {
         matmul = strassen_matmul;
         matmul_ctx = ctx;
     }
