@@ -1,24 +1,28 @@
 # Matrix Multiplication
 
+[Report](https://hackmd.io/s/HJscCbWgV)
+
 Compile:
-```
-make
+```shell
+$ make
+
+# With perf analysis
+$ make perf
 ```
 
 Execute:
-```
-./main < in.txt
+```shell
+# User input
+./main
+
+# Default test script
+make test
+
+# Custom test script
+./main --test < your_test_script.txt
 ```
 
-Test:
-1. main
+Plot:
 ```
-make
-make all_function
-```
-2. see cache miss of single function
-```
-make
-make all
-make cache-test
+make plot
 ```
